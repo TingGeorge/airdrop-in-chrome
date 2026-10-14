@@ -171,7 +171,8 @@ airdrop-in-chrome/
 │   ├── package.sh             # release zips → dist/
 │   └── version.sh             # prints the version; checks extension and helper match
 ├── tests/test_host.py         # native messaging protocol smoke test
-└── docs/                      # README images (sources in docs/src, rendered with Playwright)
+└── docs/                      # README images: banner and flow rendered from docs/src;
+                               # setup.png is a screenshot of extension/setup.html
 ```
 
 Common tasks:
@@ -180,7 +181,7 @@ Common tasks:
 scripts/build-host.sh                        # → build/airdrop-host (universal)
 python3 tests/test_host.py build/airdrop-host  # protocol tests; doesn't open AirDrop
 ./install.sh --build-from-source             # install your local build
-node docs/src/render.mjs                     # re-render README images (needs Playwright)
+node docs/src/render.mjs                     # re-render banner.png and demo.png (needs Playwright)
 ```
 
 ### CI/CD

@@ -8,7 +8,8 @@ const DEFAULT_TITLE = "Share this page via AirDrop";
 
 // The badge outlives the service worker. If the worker was stopped mid-flash,
 // don't leave a stale "…" or "✓" behind.
-chrome.action.setBadgeText({ text: "" });
+chrome.action.setBadgeText({ text: "" }).catch(() => {});
+chrome.action.setTitle({ title: DEFAULT_TITLE }).catch(() => {});
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   await chrome.contextMenus.removeAll();
@@ -29,7 +30,7 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   });
 
   if (reason === chrome.runtime.OnInstalledReason.INSTALL) {
-    chrome.runtime.openOptionsPage();
+    chrome.runtime.openOptionsPage().catch(() => {});
   }
 });
 
@@ -72,7 +73,7 @@ async function share(url, title) {
       await setBadge("", null, DEFAULT_TITLE);
     } else if (result.hostMissing || result.forbidden) {
       await flash("!", "#d93025", "The AirDrop helper needs to be set up. Opening setup…", 6000);
-      chrome.runtime.openOptionsPage();
+      chrome.runtime.openOptionsPage().catch(() => {});
     } else {
       await flash("!", "#d93025", `AirDrop failed: ${result.error}`, 6000);
     }

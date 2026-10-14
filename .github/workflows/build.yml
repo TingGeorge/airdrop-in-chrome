@@ -43,16 +43,21 @@ jobs:
           xattr -w com.apple.quarantine "0081;00000000;Safari;" "$workdir/airdrop-in-chrome/bin/airdrop-host"
           "$workdir/airdrop-in-chrome/install.sh" --extension-id abcdefghijklmnopabcdefghijklmnop
           host="$HOME/Library/Application Support/AirDropForChrome/airdrop-host"
-          ! xattr -p com.apple.quarantine "$host" 2>/dev/null
+          if xattr -p com.apple.quarantine "$host" >/dev/null 2>&1; then
+            echo "error: installed helper is still quarantined" >&2
+            exit 1
+          fi
           grep -q 'chrome-extension://abcdefghijklmnopabcdefghijklmnop/' \
             "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tinggeorge.airdrop_for_chrome.json"
           python3 tests/test_host.py "$host"
           "$workdir/airdrop-in-chrome/uninstall.sh"
 
-      - name: Check Web Store package has no key
+      - name: Check release packages
         run: |
           unzip -p dist/share-via-airdrop-extension-v*.zip manifest.json | python3 -c 'import json,sys; m=json.load(sys.stdin); assert "key" not in m; print("ok", m["version"])'
-          unzip -l dist/airdrop-in-chrome-v*.zip | grep -q 'airdrop-in-chrome/bin/airdrop-host'
+          listing="$(unzip -l dist/airdrop-in-chrome-v*.zip)"
+          grep -q 'airdrop-in-chrome/bin/airdrop-host' <<< "$listing"
+          grep -q 'airdrop-in-chrome/docs/images/banner.png' <<< "$listing"
 
       - uses: actions/upload-artifact@v4
         with:

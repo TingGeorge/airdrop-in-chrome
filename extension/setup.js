@@ -45,9 +45,18 @@ async function check() {
 async function showShortcut() {
   const commands = await chrome.commands.getAll();
   const shortcut = commands.find((c) => c.name === "_execute_action")?.shortcut;
-  document.getElementById("shortcut").textContent = shortcut || "no shortcut set";
+  if (shortcut) {
+    document.getElementById("shortcut").textContent = shortcut;
+  } else {
+    document.getElementById("shortcut-set").hidden = true;
+    document.getElementById("shortcut-unset").hidden = false;
+  }
 }
 
 button.addEventListener("click", check);
+// Re-check when the user comes back from running install.sh in Terminal.
+window.addEventListener("focus", () => {
+  if (!button.disabled) check();
+});
 showShortcut();
 check();

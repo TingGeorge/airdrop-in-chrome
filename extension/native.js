@@ -72,6 +72,10 @@ export function ping() {
   return sendToHost({ action: "ping" }, { timeoutMs: 5000 });
 }
 
+// The helper gives up on its own after 10 minutes; this is a backstop in case
+// it hangs, so a stuck port can't block every later share.
+const SHARE_TIMEOUT_MS = 11 * 60 * 1000;
+
 export function shareUrl(url, title) {
-  return sendToHost({ action: "share", url, title });
+  return sendToHost({ action: "share", url, title }, { timeoutMs: SHARE_TIMEOUT_MS });
 }
