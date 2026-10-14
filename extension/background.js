@@ -50,7 +50,7 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   switch (info.menuItemId) {
     case MENU_SEND_LINK:
-      openSendWindow();
+      openSendWindow().catch(() => {});
       break;
     // A web page can link to file:///…; only send local files from a local page.
     case MENU_SHARE_LINK:
@@ -65,7 +65,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 chrome.commands.onCommand.addListener((command) => {
-  if (command === "send-link") openSendWindow();
+  if (command === "send-link") openSendWindow().catch(() => {});
 });
 
 // Address bar: type "airdrop", a space, paste a link, press Return.
@@ -84,7 +84,10 @@ chrome.omnibox.onInputChanged.addListener((text) => {
 
 chrome.omnibox.onInputEntered.addListener((text) => {
   // Don't let feedback for this entry overwrite the badge of a share in progress.
-  if (busy) return;
+  if (busy) {
+    chrome.action.setTitle({ title: "An AirDrop window is already open." }).catch(() => {});
+    return;
+  }
   const url = parseUserUrl(text);
   if (url) {
     share(url, url);
@@ -106,7 +109,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // respond asynchronously
   }
   if (message?.type === "open-send-window") {
-    openSendWindow().then(() => sendResponse({ ok: true }));
+    openSendWindow().then(
+      () => sendResponse({ ok: true }),
+      (err) => sendResponse({ ok: false, error: err?.message ?? String(err) }),
+    );
     return true;
   }
   return false;

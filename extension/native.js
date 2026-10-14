@@ -23,6 +23,7 @@ const count = (text, char) => text.split(char).length - 1;
 function cleanPasted(text) {
   let t = (text ?? "").trim();
   let previous;
+  let passes = 0;
   do {
     previous = t;
     for (const [open, close] of WRAPPERS) {
@@ -39,17 +40,20 @@ function cleanPasted(text) {
     for (const [open, close] of [["(", ")"], ["[", "]"]]) {
       if (t.startsWith(open) && count(t, open) > count(t, close)) t = t.slice(1);
     }
-  } while (t !== previous);
+  } while (t !== previous && ++passes < 10);
   return t;
 }
 
 const DOMAIN = /^(?:[a-z0-9-]+\.)+[a-z][a-z0-9-]*[a-z0-9]$/i;
 const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+// Real links are far shorter; the cap keeps a huge paste from stalling the page.
+const MAX_LENGTH = 4096;
 
 // Turns what the user pasted or typed into a shareable web URL, or returns null.
 // Without a scheme, "example.com/page" becomes https://…, while localhost, IP
 // addresses and host:port (dev servers, LAN devices) become http://….
 export function parseUserUrl(text) {
+  if ((text ?? "").length > MAX_LENGTH) return null;
   const trimmed = cleanPasted(text);
   if (!trimmed || /\s/.test(trimmed)) return null;
   // "example.com:8080/x" and "localhost:3000" are host:port, not a scheme.
@@ -59,14 +63,18 @@ export function parseUserUrl(text) {
       const url = new URL(trimmed);
       return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
     }
-    const url = new URL(`https://${trimmed}`);
-    const host = url.hostname;
+    const probe = new URL(`https://${trimmed}`);
+    const host = probe.hostname;
+    // "user@example.com" is an email address, not a link.
+    if (probe.username || probe.password) return null;
     // new URL() turns "1.2" into 1.0.0.2, so an IPv4 host must be written out in full.
     const isIp = (IPV4.test(host) && trimmed.startsWith(host)) || host.startsWith("[");
     const isLocal = host === "localhost" || isIp;
     if (!isLocal && !DOMAIN.test(host)) return null;
-    if (isLocal || url.port) url.protocol = "http:";
-    return url.href;
+    // Read the port from the text: new URL() drops a default port like :443.
+    const port = /^[^/?#]*:(\d+)(?:[/?#]|$)/.exec(trimmed)?.[1];
+    const secure = port === "443" || port === "8443" || (!isLocal && !port);
+    return new URL(`${secure ? "https" : "http"}://${trimmed}`).href;
   } catch {
     return null;
   }
@@ -77,9 +85,12 @@ export function parseUserUrl(text) {
 export function findUrlInText(text) {
   const direct = parseUserUrl(text);
   if (direct) return direct;
-  for (const token of (text ?? "").split(/\s+/)) {
-    if (/^\W*https?:\/\//i.test(token)) {
-      const url = parseUserUrl(token.replace(/^[^h]*(?=https?:)/i, ""));
+  for (const token of (text ?? "").slice(0, 20 * MAX_LENGTH).split(/\s+/)) {
+    // Also finds links inside Markdown, e.g. [title](https://…).
+    const start = token.search(/https?:\/\//i);
+    if (start !== -1) {
+      // In [https://a](https://a) the first link ends where the Markdown target begins.
+      const url = parseUserUrl(token.slice(start).split("](")[0]);
       if (url) return url;
     }
   }

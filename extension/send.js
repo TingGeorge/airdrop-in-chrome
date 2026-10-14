@@ -43,6 +43,7 @@ input.addEventListener("blur", () => update({ showErrors: true }));
 // A pasted chat message or a multi-line block would otherwise be flattened into one
 // bogus URL, because text inputs drop newlines. Keep just the first link in it.
 input.addEventListener("paste", (event) => {
+  if (input.readOnly) return; // sending; keep showing the link that was sent
   const pasted = event.clipboardData?.getData("text/plain") ?? "";
   if (!/\s/.test(pasted.trim())) return; // a plain single link: let the browser paste it
   event.preventDefault();

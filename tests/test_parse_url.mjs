@@ -22,6 +22,10 @@ const parseCases = [
   ["192.168.1.10/admin", "http://192.168.1.10/admin"],
   ["[::1]:8080", "http://[::1]:8080/"],
   ["[::1]", "http://[::1]/"],
+  ["localhost:443", "https://localhost/"],
+  ["192.168.1.1:443/x", "https://192.168.1.1/x"],
+  ["example.com:443", "https://example.com/"],
+  ["example.com:8443/x", "https://example.com:8443/x"],
   ["https://[::1]/x].", "https://[::1]/x"],
   // Pasted from chats and documents
   ["<https://example.com/a>", "https://example.com/a"],
@@ -49,6 +53,8 @@ const parseCases = [
   [".com", null],
   ["::1", null],
   ["user:pass@host", null],
+  ["user@example.com", null],
+  ["a".repeat(5000) + ".com", null],
   ["javascript:alert(1)", null],
   ["chrome://settings", null],
   ["file:///etc/hosts", null],
@@ -64,6 +70,8 @@ const findCases = [
   ["see <https://example.com/x> for details", "https://example.com/x"],
   ["(more at https://example.com/x).", "https://example.com/x"],
   ["no links here, just e.g. words", null],
+  ["see [link](https://a.com/x) ok", "https://a.com/x"],
+  ["[https://a.com/x](https://a.com/x)", "https://a.com/x"],
 ];
 
 const shareableCases = [
@@ -74,6 +82,16 @@ const shareableCases = [
   [["not a url"], false],
 ];
 
+// Huge pastes must not stall the page (cleanup is quadratic without the length cap).
+const slowInputs = ["a" + "!".repeat(100_000) + "x", '"'.repeat(100_000) + "a.com" + ")".repeat(100_000)];
+const timing = [];
+for (const input of slowInputs) {
+  const t0 = performance.now();
+  parseUserUrl(input);
+  findUrlInText(input);
+  timing.push(performance.now() - t0);
+}
+
 let fail = 0;
 function check(name, input, got, want) {
   const ok = got === want;
@@ -83,5 +101,10 @@ function check(name, input, got, want) {
 for (const [input, want] of parseCases) check("parse", input, parseUserUrl(input), want);
 for (const [input, want] of findCases) check("find ", input, findUrlInText(input), want);
 for (const [args, want] of shareableCases) check("share", args, isShareable(...args), want);
+for (const ms of timing) {
+  const ok = ms < 250;
+  if (!ok) fail++;
+  console.log(ok ? "ok  " : "FAIL", "speed", `huge paste handled in ${ms.toFixed(1)} ms`);
+}
 console.log(fail ? `${fail} failed` : "All URL tests passed.");
 process.exit(fail ? 1 : 0);
