@@ -1,0 +1,5 @@
+build/
+dist/
+bin/
+*.pem
+.DS_Store
