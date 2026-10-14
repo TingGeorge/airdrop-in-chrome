@@ -37,7 +37,7 @@
 | 🖱️ **One-click sharing** | Click the toolbar button to AirDrop the current tab, like Safari's Share → AirDrop. |
 | ⌨️ **Keyboard shortcut** | <kbd>⌥ Option</kbd> + <kbd>⇧ Shift</kbd> + <kbd>A</kbd>. You can change it at `chrome://extensions/shortcuts`. |
 | 📋 **Paste any link** | Right-click the toolbar button and choose *Send a Link via AirDrop…*, or press <kbd>⌥ Option</kbd> + <kbd>⇧ Shift</kbd> + <kbd>L</kbd>. Paste a URL and press Return. Bare domains like `apple.com/iphone` work too. |
-| ⚡ **From the address bar** | Type `airdrop`, press <kbd>Space</kbd>, paste a link and press <kbd>Return</kbd>. It sends right away, with no window. |
+| ⚡ **From the address bar** | Type `airdrop`, press <kbd>Space</kbd>, paste a link and press <kbd>Return</kbd>. The AirDrop window opens directly, without the Send a Link window. |
 | 🔗 **Right-click menu** | *Share Page*, *Share Link* (any link on a page, without opening it) and *Share Media Address* (images, video, audio). |
 | 📄 **Local files** | A PDF or other file open in Chrome (`file://…`) is sent as the file itself, not as a link. |
 | ✅ **Clear feedback** | The toolbar badge shows `…` while AirDrop is open, ✓ when the page is sent, and `!` with the reason when something goes wrong. |
@@ -163,8 +163,19 @@ Nothing is installed system-wide and `sudo` is never needed.
 | **"AirDrop can't share this right now"** | Turn on Wi-Fi and Bluetooth, and set AirDrop to *Contacts Only* or *Everyone* in Control Center. |
 | The AirDrop window opens **behind** Chrome | Newer macOS versions sometimes refuse to bring the window forward. Switch to it with ⌘Tab or Mission Control. |
 | Badge shows **✕** | This page can't be shared. Only `http`, `https` and `file` URLs work, so `chrome://` pages, the New Tab page and similar won't. |
-| The shortcut does nothing | Another extension may already use <kbd>⌥⇧A</kbd>. Assign a different one at `chrome://extensions/shortcuts`. |
+| A shortcut does nothing | Another extension may already use <kbd>⌥⇧A</kbd> or <kbd>⌥⇧L</kbd>. Assign a different one at `chrome://extensions/shortcuts`. |
 | Using a Chromium browser that isn't listed | Copy `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tinggeorge.airdrop_for_chrome.json` into that browser's `NativeMessagingHosts` folder. |
+
+### Updating
+
+Unpacked extensions don't update themselves. To move to a new release:
+
+1. Download and unzip the new release.
+2. Run `./install.sh` from the new folder. This updates the helper to the matching version. It's optional when the release notes say the helper is unchanged; the old helper keeps working.
+3. In `chrome://extensions`, remove the old extension and choose **Load unpacked** on the new `extension` folder. Alternatively, copy the new files over the old folder and click the extension's ↻ **Reload**.
+4. Keep that folder, because Chrome loads the extension from it.
+
+If you cloned the repo instead: `git pull`, `./install.sh`, then click ↻ **Reload** on the extension.
 
 ### Uninstall
 
@@ -196,7 +207,7 @@ airdrop-in-chrome/
 │   ├── test_host.py           # native messaging protocol smoke test
 │   └── test_parse_url.mjs     # unit tests for pasted-link parsing
 └── docs/                      # README images (banner/flow rendered from docs/src) and icon SVGs (docs/src/icon);
-                               # setup.png is a screenshot of extension/setup.html
+                               # setup.png and send-link.png are screenshots of the extension's pages
 ```
 
 Common tasks:
