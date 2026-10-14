@@ -96,7 +96,11 @@ Got a link in a chat, an email or your notes? You don't need to open it first:
 
 **Even faster:** click the address bar (<kbd>⌘L</kbd>), type `airdrop` and press <kbd>Space</kbd>. Paste the link and press <kbd>Return</kbd>.
 
-Only `http`/`https` links are accepted. If the link has no scheme (`example.com/page`), `https://` is assumed.
+It's forgiving about what you paste:
+- **Missing scheme:** `https://` is added (`apple.com/iphone`). Local addresses like `localhost:3000` or `192.168.1.10` get `http://` instead.
+- **Wrappers and punctuation** from chats and documents are removed: `<…>`, quotes, `(…)` and a trailing `.` or `)`. Balanced parentheses such as Wikipedia's `Mercury_(planet)` are kept.
+- **Whole messages:** if you paste a message containing a link, the first `http(s)` link in it is picked out.
+- **Allowed links:** only `http`/`https`. Anything else is refused before AirDrop opens.
 
 ## 🧠 How it works
 

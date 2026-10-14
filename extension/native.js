@@ -2,34 +2,88 @@
 
 export const HOST_NAME = "com.tinggeorge.airdrop_for_chrome";
 
-// Schemes AirDrop can do something useful with. file:// URLs send the file itself.
-const SHAREABLE_SCHEMES = new Set(["http:", "https:", "file:"]);
-
-export function isShareable(url) {
+// Schemes AirDrop can do something useful with. file:// URLs send the file itself,
+// so they're only allowed when the user is looking at that file (allowFile).
+export function isShareable(url, { allowFile = true } = {}) {
   try {
-    return SHAREABLE_SCHEMES.has(new URL(url).protocol);
+    const { protocol } = new URL(url);
+    return protocol === "http:" || protocol === "https:" || (allowFile && protocol === "file:");
   } catch {
     return false;
   }
 }
 
+// Wrappers chat apps and docs put around links: <https://…>, "https://…", (https://…).
+const WRAPPERS = [["<", ">"], ['"', '"'], ["'", "'"], ["“", "”"], ["(", ")"]];
+
+const count = (text, char) => text.split(char).length - 1;
+
+// Removes wrappers and trailing sentence punctuation from a pasted link, repeatedly,
+// so combinations like `<https://x.com/a>.` or `"(https://x.com/a)",` come out clean.
+function cleanPasted(text) {
+  let t = (text ?? "").trim();
+  let previous;
+  do {
+    previous = t;
+    for (const [open, close] of WRAPPERS) {
+      if (t.length > 2 && t.startsWith(open) && t.endsWith(close)) t = t.slice(1, -1).trim();
+    }
+    // [https://…] — but not an IPv6 host like [::1].
+    if (/^\[[a-z][a-z0-9+.-]*:\/\/.*\]$/i.test(t)) t = t.slice(1, -1).trim();
+    t = t.replace(/[.,;:!?'"”’>]+$/, "");
+    if (t.endsWith("]") && count(t, "]") > count(t, "[")) t = t.slice(0, -1);
+    // A trailing ")" closes the sentence, unless it balances one in the URL (Foo_(bar)).
+    if (t.endsWith(")") && count(t, ")") > count(t, "(")) t = t.slice(0, -1);
+    // Same for openers left behind once their closer was stripped above.
+    t = t.replace(/^[<"“'‘]+/, "");
+    for (const [open, close] of [["(", ")"], ["[", "]"]]) {
+      if (t.startsWith(open) && count(t, open) > count(t, close)) t = t.slice(1);
+    }
+  } while (t !== previous);
+  return t;
+}
+
+const DOMAIN = /^(?:[a-z0-9-]+\.)+[a-z][a-z0-9-]*[a-z0-9]$/i;
+const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+
 // Turns what the user pasted or typed into a shareable web URL, or returns null.
-// Accepts bare domains ("example.com/page") by assuming https.
+// Without a scheme, "example.com/page" becomes https://…, while localhost, IP
+// addresses and host:port (dev servers, LAN devices) become http://….
 export function parseUserUrl(text) {
-  const trimmed = (text ?? "").trim();
+  const trimmed = cleanPasted(text);
   if (!trimmed || /\s/.test(trimmed)) return null;
   // "example.com:8080/x" and "localhost:3000" are host:port, not a scheme.
   const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^[^/:]+:\d+(?:[/?#]|$)/.test(trimmed);
-  const candidate = hasScheme ? trimmed : `https://${trimmed}`;
   try {
-    const url = new URL(candidate);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-    // A bare word like "hello" isn't a link; require a dot, localhost or an IPv6 host.
-    if (!hasScheme && !/[.:]/.test(url.hostname) && url.hostname !== "localhost") return null;
+    if (hasScheme) {
+      const url = new URL(trimmed);
+      return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+    }
+    const url = new URL(`https://${trimmed}`);
+    const host = url.hostname;
+    // new URL() turns "1.2" into 1.0.0.2, so an IPv4 host must be written out in full.
+    const isIp = (IPV4.test(host) && trimmed.startsWith(host)) || host.startsWith("[");
+    const isLocal = host === "localhost" || isIp;
+    if (!isLocal && !DOMAIN.test(host)) return null;
+    if (isLocal || url.port) url.protocol = "http:";
     return url.href;
   } catch {
     return null;
   }
+}
+
+// Finds the first link in a pasted block of text, e.g. a whole chat message.
+// Returns null if there's no http(s) link in it and the text isn't a link itself.
+export function findUrlInText(text) {
+  const direct = parseUserUrl(text);
+  if (direct) return direct;
+  for (const token of (text ?? "").split(/\s+/)) {
+    if (/^\W*https?:\/\//i.test(token)) {
+      const url = parseUserUrl(token.replace(/^[^h]*(?=https?:)/i, ""));
+      if (url) return url;
+    }
+  }
+  return null;
 }
 
 function errorResult(error) {

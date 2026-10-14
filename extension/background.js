@@ -52,11 +52,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     case MENU_SEND_LINK:
       openSendWindow();
       break;
+    // A web page can link to file:///…; only send local files from a local page.
     case MENU_SHARE_LINK:
-      share(info.linkUrl, info.linkUrl);
+      share(info.linkUrl, info.linkUrl, { allowFile: isFilePage(info.pageUrl) });
       break;
     case MENU_SHARE_MEDIA:
-      share(info.srcUrl, info.srcUrl);
+      share(info.srcUrl, info.srcUrl, { allowFile: isFilePage(info.pageUrl) });
       break;
     default:
       share(info.pageUrl || tab?.url, tab?.title);
@@ -82,6 +83,8 @@ chrome.omnibox.onInputChanged.addListener((text) => {
 });
 
 chrome.omnibox.onInputEntered.addListener((text) => {
+  // Don't let feedback for this entry overwrite the badge of a share in progress.
+  if (busy) return;
   const url = parseUserUrl(text);
   if (url) {
     share(url, url);
@@ -110,14 +113,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Opens the "Send a Link" window, or focuses it if it's already open.
-async function openSendWindow() {
+// Concurrent calls share one attempt: getContexts can't see a window that's still loading.
+let opening;
+function openSendWindow() {
+  opening ??= doOpenSendWindow().finally(() => {
+    opening = undefined;
+  });
+  return opening;
+}
+
+async function doOpenSendWindow() {
   const url = chrome.runtime.getURL(SEND_PAGE);
   const [existing] = await chrome.runtime.getContexts({ contextTypes: ["TAB"], documentUrls: [url] });
   if (existing?.windowId !== undefined && existing.windowId !== -1) {
-    await chrome.windows.update(existing.windowId, { focused: true });
+    await chrome.windows.update(existing.windowId, { focused: true, state: "normal" });
     return;
   }
   await chrome.windows.create({ url, type: "popup", width: 460, height: 240, focused: true });
+}
+
+function isFilePage(url) {
+  return typeof url === "string" && url.startsWith("file:");
 }
 
 // Omnibox descriptions are XML; escape what the user typed.
@@ -130,11 +146,11 @@ let busy = false;
 let flashTimer;
 
 // Resolves with the helper's result so callers (like send.html) can show it.
-async function share(url, title) {
+async function share(url, title, { allowFile = true } = {}) {
   // The AirDrop window from the previous click is still open.
   if (busy) return { ok: false, busy: true, error: "An AirDrop window is already open." };
 
-  if (!url || !isShareable(url)) {
+  if (!url || !isShareable(url, { allowFile })) {
     await flash("✕", "#d93025", "Only web pages (http/https) and local files can be shared via AirDrop.");
     return { ok: false, error: "Only web pages (http/https) and local files can be shared via AirDrop." };
   }

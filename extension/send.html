@@ -13,9 +13,9 @@
       Send a link via AirDrop
     </label>
     <input id="url" name="url" type="text" inputmode="url" spellcheck="false"
-           placeholder="Paste a link, e.g. https://example.com" autofocus required>
+           placeholder="Paste a link, e.g. https://example.com" aria-describedby="status" autofocus>
     <div class="row">
-      <p id="status" class="status" aria-live="polite">Paste with ⌘V, then press Return.</p>
+      <p id="status" class="status" role="status">Paste with ⌘V, then press Return.</p>
       <button id="send" type="submit" disabled>Send</button>
     </div>
   </form>

@@ -63,7 +63,8 @@ input {
 }
 
 input:focus {
-  outline: none;
+  /* Transparent rather than none, so forced-colors mode still draws a focus ring. */
+  outline: 2px solid transparent;
   border-color: var(--focus);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent);
 }
@@ -97,3 +98,4 @@ button {
   cursor: pointer;
 }
 button:disabled { opacity: 0.4; cursor: default; }
+input:read-only { color: var(--muted); }
