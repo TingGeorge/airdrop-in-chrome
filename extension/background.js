@@ -135,7 +135,37 @@ async function doOpenSendWindow() {
     await chrome.windows.update(existing.windowId, { focused: true, state: "normal" });
     return;
   }
-  await chrome.windows.create({ url, type: "popup", width: 460, height: 240, focused: true });
+  const options = { url, type: "popup", focused: true };
+  try {
+    await chrome.windows.create({ ...options, ...(await centeredBounds(SEND_WIDTH, SEND_HEIGHT)) });
+  } catch {
+    // Chrome rejects bounds that are mostly off-screen (e.g. the browser window was
+    // dragged half off a display); fall back to its default placement.
+    await chrome.windows.create({ ...options, width: SEND_WIDTH, height: SEND_HEIGHT });
+  }
+}
+
+const SEND_WIDTH = 460;
+const SEND_HEIGHT = 240;
+
+// Centre a new window over the browser window the user is working in (so it lands
+// mid-screen, on the right display) instead of where Chrome puts popups by default.
+// Service workers have no window.screen, and this needs no extra permission.
+async function centeredBounds(width, height) {
+  try {
+    const anchor = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+    if ([anchor.left, anchor.top, anchor.width, anchor.height].every(Number.isFinite)) {
+      return {
+        width,
+        height,
+        left: Math.round(anchor.left + Math.max(0, (anchor.width - width) / 2)),
+        top: Math.round(anchor.top + Math.max(0, (anchor.height - height) / 2)),
+      };
+    }
+  } catch {
+    // No browser window open; let Chrome choose.
+  }
+  return { width, height };
 }
 
 function isFilePage(url) {
