@@ -13,7 +13,7 @@ version="$(scripts/version.sh)"
 rm -rf dist
 stage="dist/airdrop-in-chrome"
 mkdir -p "$stage/bin"
-cp -R extension native-host install.sh uninstall.sh README.md "$stage/"
+cp -R extension native-host install.sh uninstall.sh README.md LICENSE "$stage/"
 cp build/airdrop-host "$stage/bin/airdrop-host"
 # The README's images.
 mkdir -p "$stage/docs"

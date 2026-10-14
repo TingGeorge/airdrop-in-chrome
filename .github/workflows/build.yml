@@ -57,6 +57,7 @@ jobs:
           unzip -p dist/share-via-airdrop-extension-v*.zip manifest.json | python3 -c 'import json,sys; m=json.load(sys.stdin); assert "key" not in m; print("ok", m["version"])'
           listing="$(unzip -l dist/airdrop-in-chrome-v*.zip)"
           grep -q 'airdrop-in-chrome/bin/airdrop-host' <<< "$listing"
+          grep -q 'airdrop-in-chrome/LICENSE' <<< "$listing"
           grep -q 'airdrop-in-chrome/docs/images/banner.jpg' <<< "$listing"
 
       - uses: actions/upload-artifact@v4
