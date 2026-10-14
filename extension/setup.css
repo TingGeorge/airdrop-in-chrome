@@ -84,6 +84,14 @@ button {
   cursor: pointer;
 }
 button:disabled { opacity: 0.5; cursor: default; }
+button.secondary {
+  margin-top: 4px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+
+h3 { margin: 16px 0 4px; font-size: 14px; color: var(--muted); font-weight: 600; }
 
 pre {
   background: var(--code-bg);

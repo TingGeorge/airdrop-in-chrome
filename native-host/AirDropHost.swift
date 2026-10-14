@@ -13,7 +13,7 @@
 import AppKit
 import Foundation
 
-let hostVersion = "1.0.0"
+let hostVersion = "1.1.0"
 
 // The AirDrop window stays open until the user acts. Give up eventually so a
 // forgotten window doesn't leave this process running forever.

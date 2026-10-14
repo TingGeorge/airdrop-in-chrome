@@ -60,6 +60,8 @@ jobs:
           2. In Terminal, run \`./install.sh\` from the unzipped \`airdrop-in-chrome\` folder. It includes a prebuilt helper (Apple silicon + Intel), so you don't need Xcode.
           3. In \`chrome://extensions\`, turn on **Developer mode**, click **Load unpacked**, and choose the \`extension\` folder.
 
+          **Updating from an earlier version:** unzip the new release and run \`./install.sh\`. Then, in \`chrome://extensions\`, remove the old extension and load the new \`extension\` folder. Keep that folder; Chrome loads the extension from it.
+
           \`share-via-airdrop-extension-v$VERSION.zip\` contains only the extension, for uploading to the Chrome Web Store.
           NOTES
           gh release create "v$VERSION" dist/*.zip \

@@ -57,7 +57,7 @@ jobs:
           unzip -p dist/share-via-airdrop-extension-v*.zip manifest.json | python3 -c 'import json,sys; m=json.load(sys.stdin); assert "key" not in m; print("ok", m["version"])'
           listing="$(unzip -l dist/airdrop-in-chrome-v*.zip)"
           grep -q 'airdrop-in-chrome/bin/airdrop-host' <<< "$listing"
-          grep -q 'airdrop-in-chrome/docs/images/banner.png' <<< "$listing"
+          grep -q 'airdrop-in-chrome/docs/images/banner.jpg' <<< "$listing"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -75,10 +75,11 @@ jobs:
       - name: Check JavaScript syntax and manifest
         run: |
           for f in extension/*.js; do node --check "$f"; done
+          node tests/test_parse_url.mjs
           node -e '
             const fs = require("fs");
             const m = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
-            const files = [m.background.service_worker, m.options_page, ...Object.values(m.icons), ...Object.values(m.action.default_icon)];
+            const files = [m.background.service_worker, m.options_page, "send.html", "send.js", "send.css", ...Object.values(m.icons), ...Object.values(m.action.default_icon)];
             for (const f of files) if (!fs.existsSync("extension/" + f)) throw new Error("missing " + f);
             console.log("manifest ok:", m.name, m.version);
           '

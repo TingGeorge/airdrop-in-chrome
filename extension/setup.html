@@ -12,7 +12,7 @@
       <img src="icons/icon128.png" alt="" width="64" height="64">
       <div>
         <h1>Share via AirDrop</h1>
-        <p class="subtitle">Send the page you're viewing to a nearby iPhone, iPad or Mac.</p>
+        <p class="subtitle">Send the page you're viewing, or any link, to a nearby iPhone, iPad or Mac.</p>
       </div>
     </header>
 
@@ -53,12 +53,20 @@ cd airdrop-in-chrome</code></pre>
 
     <section class="card">
       <h2>How to share</h2>
+      <h3>The page you're on</h3>
       <ul>
         <li>Click the <img src="icons/icon16.png" alt="" class="inline-icon"> toolbar button (pin it from the puzzle-piece menu), or</li>
-        <li><span id="shortcut-set">press <kbd id="shortcut">⌥⇧A</kbd>; you can change this at <code>chrome://extensions/shortcuts</code>,</span><span id="shortcut-unset" hidden>assign a keyboard shortcut at <code>chrome://extensions/shortcuts</code>,</span> or</li>
+        <li><span id="shortcut-set">press <kbd id="shortcut">⌥⇧A</kbd>,</span><span id="shortcut-unset" hidden>assign a keyboard shortcut at <code>chrome://extensions/shortcuts</code>,</span> or</li>
         <li>right-click a page or link and choose <em>Share Page/Link via AirDrop</em>.</li>
       </ul>
-      <p>The AirDrop window opens. Pick a person or device, and the link opens on the other device.</p>
+      <h3>Any link you paste</h3>
+      <ul>
+        <li>Right-click the toolbar button and choose <em>Send a Link via AirDrop…</em>, or</li>
+        <li><span id="send-shortcut-set">press <kbd id="send-shortcut">⌥⇧L</kbd>,</span><span id="send-shortcut-unset" hidden>assign a shortcut for it at <code>chrome://extensions/shortcuts</code>,</span> or</li>
+        <li>in the address bar, type <kbd>airdrop</kbd>, press <kbd>Space</kbd>, paste the link and press <kbd>Return</kbd>.</li>
+      </ul>
+      <button id="open-send" type="button" class="secondary">Send a link…</button>
+      <p class="detail">The AirDrop window opens. Pick a person or device, and the link opens there. You can change shortcuts at <code>chrome://extensions/shortcuts</code>.</p>
     </section>
   </main>
   <script type="module" src="setup.js"></script>
