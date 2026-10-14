@@ -13,6 +13,25 @@ export function isShareable(url) {
   }
 }
 
+// Turns what the user pasted or typed into a shareable web URL, or returns null.
+// Accepts bare domains ("example.com/page") by assuming https.
+export function parseUserUrl(text) {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed || /\s/.test(trimmed)) return null;
+  // "example.com:8080/x" and "localhost:3000" are host:port, not a scheme.
+  const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^[^/:]+:\d+(?:[/?#]|$)/.test(trimmed);
+  const candidate = hasScheme ? trimmed : `https://${trimmed}`;
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    // A bare word like "hello" isn't a link; require a dot, localhost or an IPv6 host.
+    if (!hasScheme && !/[.:]/.test(url.hostname) && url.hostname !== "localhost") return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
 function errorResult(error) {
   return {
     ok: false,

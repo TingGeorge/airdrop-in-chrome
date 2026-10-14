@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Send a Link via AirDrop</title>
+  <link rel="stylesheet" href="send.css">
+</head>
+<body>
+  <form id="form" autocomplete="off">
+    <label for="url">
+      <img src="icons/icon32.png" alt="" width="20" height="20">
+      Send a link via AirDrop
+    </label>
+    <input id="url" name="url" type="text" inputmode="url" spellcheck="false"
+           placeholder="Paste a link, e.g. https://example.com" autofocus required>
+    <div class="row">
+      <p id="status" class="status" aria-live="polite">Paste with ⌘V, then press Return.</p>
+      <button id="send" type="submit" disabled>Send</button>
+    </div>
+  </form>
+  <script type="module" src="send.js"></script>
+</body>
+</html>

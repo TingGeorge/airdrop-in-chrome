@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Share via AirDrop",
-  "version": "1.0.0",
-  "description": "Send the current page (or any link) to nearby Apple devices with AirDrop, just like Safari's Share button.",
+  "version": "1.1.0",
+  "description": "Send the current page, or any link you paste, to nearby Apple devices with AirDrop, just like Safari's Share button.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy0sZwyDX7fDvO/eKqvTCcnRn1xCo9G6RUPh8H/ZepvtKYhwfHa1UdezF17KOIeOqD7qhEpvFfnJLTjQOFbEP5IXhsaObOLyPTIH5zhyZ+nCCD0yER1ovLdx4C6LoxIEIabp0U0i4xx8tOt+z+t9Oo+Z3YcwMj96vYhvYmdwnwQEC9fNxljoVqeSahZLolHvW4Bih3Luvrwsz23karp6lXZWoy9qEh938KR0iUBK7OR/1jDlULeKc60Ga9YwceIvu+0uupFkXKowHYpnVxQj97TJgV1raUmK2rMS3jzfk+Eck6yvY8fyC6y2wOXAuKJujK1LQ20ZdJJmv1cAywKl9KwIDAQAB",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "contextMenus", "nativeMessaging"],
@@ -25,7 +25,16 @@
         "default": "Alt+Shift+A"
       },
       "description": "Share the current page via AirDrop"
+    },
+    "send-link": {
+      "suggested_key": {
+        "default": "Alt+Shift+L"
+      },
+      "description": "Send a pasted link via AirDrop"
     }
+  },
+  "omnibox": {
+    "keyword": "airdrop"
   },
   "options_page": "setup.html",
   "icons": {

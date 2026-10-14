@@ -11,8 +11,9 @@ const { chromium } = require(require.resolve("playwright", { paths: [process.cwd
 const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.join(here, "..", "images");
 const pages = [
-  { src: "banner.html", out: "banner.png", width: 1280, height: 420 },
-  { src: "demo.html", out: "demo.png", width: 1280, height: 780 },
+  // JPEG: these are gradient-heavy, which PNG palettes band and full PNGs bloat.
+  { src: "banner.html", out: "banner.jpg", width: 1280, height: 420 },
+  { src: "demo.html", out: "demo.jpg", width: 1280, height: 780 },
 ];
 
 const browser = await chromium.launch();
@@ -20,7 +21,7 @@ for (const p of pages) {
   const page = await browser.newPage({ viewport: { width: p.width, height: p.height }, deviceScaleFactor: 2 });
   await page.goto("file://" + path.join(here, p.src));
   await page.waitForLoadState("networkidle");
-  await page.screenshot({ path: path.join(out, p.out) });
+  await page.screenshot({ path: path.join(out, p.out), type: "jpeg", quality: 88 });
   await page.close();
   console.log("wrote", p.out);
 }

@@ -42,21 +42,30 @@ async function check() {
   button.disabled = false;
 }
 
-async function showShortcut() {
-  const commands = await chrome.commands.getAll();
-  const shortcut = commands.find((c) => c.name === "_execute_action")?.shortcut;
+function showShortcut(commands, name, prefix) {
+  const shortcut = commands.find((c) => c.name === name)?.shortcut;
   if (shortcut) {
-    document.getElementById("shortcut").textContent = shortcut;
+    document.getElementById(prefix).textContent = shortcut;
   } else {
-    document.getElementById("shortcut-set").hidden = true;
-    document.getElementById("shortcut-unset").hidden = false;
+    document.getElementById(`${prefix}-set`).hidden = true;
+    document.getElementById(`${prefix}-unset`).hidden = false;
   }
 }
+
+async function showShortcuts() {
+  const commands = await chrome.commands.getAll();
+  showShortcut(commands, "_execute_action", "shortcut");
+  showShortcut(commands, "send-link", "send-shortcut");
+}
+
+document.getElementById("open-send").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ type: "open-send-window" });
+});
 
 button.addEventListener("click", check);
 // Re-check when the user comes back from running install.sh in Terminal.
 window.addEventListener("focus", () => {
   if (!button.disabled) check();
 });
-showShortcut();
+showShortcuts();
 check();

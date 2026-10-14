@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner.png" alt="Share via AirDrop: Safari's AirDrop button, now in Google Chrome on macOS" width="100%">
+  <img src="docs/images/banner.jpg" alt="Share via AirDrop: Safari's AirDrop button, now in Google Chrome on macOS" width="100%">
 </p>
 
 <p align="center">
@@ -12,7 +12,8 @@
 
 <p align="center">
   <b>Safari can AirDrop the page you're reading to your iPhone in two clicks. Chrome can't.</b><br>
-  This extension adds that missing button to Chrome, Brave, Edge, Arc and other Chromium browsers on the Mac.
+  This extension adds that missing button to Chrome, Brave, Edge, Arc and other Chromium browsers on the Mac.<br>
+  It can also send any link you paste, without opening it first.
 </p>
 
 <p align="center">
@@ -25,7 +26,7 @@
 ---
 
 <p align="center">
-  <img src="docs/images/demo.png" alt="Click the toolbar button, pick a nearby device in the AirDrop window, and the page opens on the other device" width="100%">
+  <img src="docs/images/demo.jpg" alt="Click the toolbar button, pick a nearby device in the AirDrop window, and the page opens on the other device" width="100%">
 </p>
 <p align="center"><sub>Illustration of the sharing flow. The AirDrop window you see is the real macOS one.</sub></p>
 
@@ -35,11 +36,13 @@
 | --- | --- |
 | 🖱️ **One-click sharing** | Click the toolbar button to AirDrop the current tab, like Safari's Share → AirDrop. |
 | ⌨️ **Keyboard shortcut** | <kbd>⌥ Option</kbd> + <kbd>⇧ Shift</kbd> + <kbd>A</kbd>. You can change it at `chrome://extensions/shortcuts`. |
-| 🔗 **Right-click menu** | *Share Page*, *Share Link* (any link, without opening it) and *Share Media Address* (images, video, audio). |
+| 📋 **Paste any link** | Right-click the toolbar button and choose *Send a Link via AirDrop…*, or press <kbd>⌥ Option</kbd> + <kbd>⇧ Shift</kbd> + <kbd>L</kbd>. Paste a URL and press Return. Bare domains like `apple.com/iphone` work too. |
+| ⚡ **From the address bar** | Type `airdrop`, press <kbd>Space</kbd>, paste a link and press <kbd>Return</kbd>. It sends right away, with no window. |
+| 🔗 **Right-click menu** | *Share Page*, *Share Link* (any link on a page, without opening it) and *Share Media Address* (images, video, audio). |
 | 📄 **Local files** | A PDF or other file open in Chrome (`file://…`) is sent as the file itself, not as a link. |
 | ✅ **Clear feedback** | The toolbar badge shows `…` while AirDrop is open, ✓ when the page is sent, and `!` with the reason when something goes wrong. |
 | 🧩 **Works across browsers** | Google Chrome (Stable/Beta/Dev/Canary), Chromium, Brave, Microsoft Edge, Vivaldi and Arc. |
-| 🔒 **Private by design** | No network access, no analytics, no tab-reading permission. The extension only sees a URL when you click Share. |
+| 🔒 **Private by design** | No network access, no analytics, no tab-reading permission. The extension only sees a URL when you click Share or paste one. |
 
 ## 🚀 Install
 
@@ -56,7 +59,7 @@ There are two parts: the **extension**, and a small **AirDrop helper** that the 
 3. Load the extension:
    1. Open `chrome://extensions`.
    2. Turn on **Developer mode** (top right).
-   3. Click **Load unpacked** and choose the `extension` folder.
+   3. Click **Load unpacked** and choose the **`extension` folder inside** `airdrop-in-chrome`, not `airdrop-in-chrome` itself. If you pick the outer folder, Chrome says *"Manifest file is missing or unreadable"*.
 4. Pin **Share via AirDrop** from the 🧩 puzzle-piece menu so the button stays in the toolbar.
 
 ### Option B: Build from source
@@ -79,6 +82,22 @@ A setup page opens automatically when the extension is installed. You can also r
   <img src="docs/images/setup.png" alt="The extension's setup page showing 'AirDrop helper is installed. You're all set!'" width="520">
 </p>
 
+## 📋 Send a link you paste
+
+Got a link in a chat, an email or your notes? You don't need to open it first:
+
+<p align="center">
+  <img src="docs/images/send-link.png" alt="The Send a Link window with a pasted URL and a Send button" width="460">
+</p>
+
+1. Right-click the toolbar button and choose **Send a Link via AirDrop…**, or press <kbd>⌥⇧L</kbd>.
+2. Paste the link with <kbd>⌘V</kbd> and press <kbd>Return</kbd>.
+3. Pick a device in the AirDrop window. The window shows **Sent ✓** and closes itself.
+
+**Even faster:** click the address bar (<kbd>⌘L</kbd>), type `airdrop` and press <kbd>Space</kbd>. Paste the link and press <kbd>Return</kbd>.
+
+Only `http`/`https` links are accepted. If the link has no scheme (`example.com/page`), `https://` is assumed.
+
 ## 🧠 How it works
 
 Browser extensions run in a sandbox and can't call macOS APIs, so JavaScript alone can't reach AirDrop. The extension uses Chrome's [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging) to start a tiny Swift helper. The helper asks macOS for the same AirDrop window Safari uses.
@@ -86,7 +105,8 @@ Browser extensions run in a sandbox and can't call macOS APIs, so JavaScript alo
 ```mermaid
 flowchart LR
     subgraph Chrome["Chrome (sandboxed)"]
-        A["Toolbar button<br/>⌥⇧A shortcut<br/>Right-click menu"] --> B["Service worker<br/><code>background.js</code>"]
+        A["Toolbar button · ⌥⇧A<br/>Right-click menu"] --> B["Service worker<br/><code>background.js</code>"]
+        L["Send a Link window · ⌥⇧L<br/>Address bar: airdrop ␣ URL"] --> B
     end
     B -- "connectNative()<br/>{action: share, url}" --> C["<b>airdrop-host</b><br/>Swift helper"]
     C -- "NSSharingService<br/>.sendViaAirDrop" --> D["macOS AirDrop window"]
@@ -101,7 +121,7 @@ sequenceDiagram
     participant Ext as Extension
     participant Host as airdrop-host
     participant Mac as macOS AirDrop
-    You->>Ext: Click button / ⌥⇧A / right-click
+    You->>Ext: Click button / ⌥⇧A / right-click / paste a link
     Ext->>Ext: Check the URL is http(s) or file
     Ext->>Host: Launch via native messaging, send {"action":"share","url":…}
     Host->>Mac: NSSharingService(.sendViaAirDrop).perform([url])
@@ -161,8 +181,10 @@ airdrop-in-chrome/
 ├── extension/                 # Chrome extension (Manifest V3)
 │   ├── manifest.json
 │   ├── background.js          # toolbar, shortcut, context menus, badge feedback
-│   ├── native.js              # native messaging client (connectNative, errors)
-│   └── setup.html/.js/.css    # setup and status page (also the Options page)
+│   ├── native.js              # native messaging client (connectNative, errors, URL parsing)
+│   ├── send.html/.js/.css     # "Send a Link" window
+│   ├── setup.html/.js/.css    # setup and status page (also the Options page)
+│   └── icons/                 # rendered from docs/src/icon/*.svg
 ├── native-host/
 │   └── AirDropHost.swift      # the AirDrop helper (native messaging host)
 ├── install.sh / uninstall.sh  # register / unregister the helper with browsers
@@ -170,8 +192,10 @@ airdrop-in-chrome/
 │   ├── build-host.sh          # universal (arm64 + x86_64) build, ad-hoc signed
 │   ├── package.sh             # release zips → dist/
 │   └── version.sh             # prints the version; checks extension and helper match
-├── tests/test_host.py         # native messaging protocol smoke test
-└── docs/                      # README images: banner and flow rendered from docs/src;
+├── tests/
+│   ├── test_host.py           # native messaging protocol smoke test
+│   └── test_parse_url.mjs     # unit tests for pasted-link parsing
+└── docs/                      # README images (banner/flow rendered from docs/src) and icon SVGs (docs/src/icon);
                                # setup.png is a screenshot of extension/setup.html
 ```
 
@@ -181,14 +205,16 @@ Common tasks:
 scripts/build-host.sh                        # → build/airdrop-host (universal)
 python3 tests/test_host.py build/airdrop-host  # protocol tests; doesn't open AirDrop
 ./install.sh --build-from-source             # install your local build
-node docs/src/render.mjs                     # re-render banner.png and demo.png (needs Playwright)
+node tests/test_parse_url.mjs                # pasted-link parsing tests
+node docs/src/icon/render-icons.mjs          # re-render extension icons from SVG (needs Playwright)
+node docs/src/render.mjs                     # re-render banner.jpg and demo.jpg (needs Playwright)
 ```
 
 ### CI/CD
 
 - **CI** ([`build.yml`](.github/workflows/build.yml)) runs on every pull request:
   - **macOS:** checks that versions match, builds the universal helper, runs the protocol tests, and runs `install.sh` both from source and from the packaged release (with a simulated quarantine flag). It also checks `uninstall.sh` and the packages.
-  - **Linux:** ShellCheck for the scripts, JavaScript syntax checks, and a check that every file the manifest references exists.
+  - **Linux:** ShellCheck for the scripts, JavaScript syntax checks, unit tests for pasted-link parsing, and a check that every file the manifest references exists.
 - **Releases** ([`release.yml`](.github/workflows/release.yml)) run on every push to `main`. If `main` contains a version that has no GitHub Release yet, the workflow reruns CI, then publishes the exact bundle CI tested:
   - `airdrop-in-chrome-vX.Y.Z.zip`: extension + prebuilt helper + installer
   - `share-via-airdrop-extension-vX.Y.Z.zip`: extension only, with `key` removed, ready for the Chrome Web Store
