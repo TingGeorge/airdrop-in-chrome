@@ -117,7 +117,7 @@ async function openSendWindow() {
     await chrome.windows.update(existing.windowId, { focused: true });
     return;
   }
-  await chrome.windows.create({ url, type: "popup", width: 460, height: 300, focused: true });
+  await chrome.windows.create({ url, type: "popup", width: 460, height: 240, focused: true });
 }
 
 // Omnibox descriptions are XML; escape what the user typed.

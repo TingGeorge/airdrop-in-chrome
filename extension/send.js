@@ -8,6 +8,11 @@ const status = document.getElementById("status");
 const HINT = "Paste with ⌘V, then press Return.";
 let sending = false;
 
+// window.close() isn't guaranteed for windows created by chrome.windows.create.
+function closeWindow() {
+  chrome.windows.getCurrent().then((w) => chrome.windows.remove(w.id)).catch(() => window.close());
+}
+
 function setStatus(text, state = "") {
   status.textContent = text;
   status.className = `status ${state}`;
@@ -38,13 +43,18 @@ form.addEventListener("submit", async (event) => {
   button.disabled = true;
   setStatus("Opening AirDrop…", "pending");
 
-  const result = await chrome.runtime.sendMessage({ type: "share-link", url });
+  let result;
+  try {
+    result = await chrome.runtime.sendMessage({ type: "share-link", url });
+  } catch (err) {
+    result = { ok: false, error: err?.message ?? String(err) };
+  }
 
   sending = false;
   input.disabled = false;
   if (result?.ok) {
     setStatus("Sent ✓", "ok");
-    setTimeout(() => window.close(), 1200);
+    setTimeout(closeWindow, 1200);
     return;
   }
   if (result?.cancelled) {
@@ -59,7 +69,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") window.close();
+  if (event.key === "Escape") closeWindow();
 });
 
 update();
