@@ -1,0 +1,107 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f5f5f7;
+  --card: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+  --accent: #0066cc;
+  --button-bg: #0066cc;
+  --ok: #30d158;
+  --error: #ff453a;
+  --code-bg: #f0f0f3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1e;
+    --card: #2c2c2e;
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --border: #3a3a3c;
+    --code-bg: #1c1c1e;
+    --accent: #0a84ff;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+}
+
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 16px 64px;
+}
+
+header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+h1 { margin: 0; font-size: 28px; }
+h2 { margin: 0 0 8px; font-size: 18px; }
+.subtitle { margin: 4px 0 0; color: var(--muted); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.status-row { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+.dot.ok { background: var(--ok); }
+.dot.error { background: var(--error); }
+.dot.pending { background: var(--accent); }
+
+.detail { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+
+button {
+  margin-top: 12px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--button-bg);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+
+code, kbd { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+
+kbd {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+  margin-right: 2px;
+}
+
+a { color: var(--accent); }
+
+.inline-icon { vertical-align: -3px; }

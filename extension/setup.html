@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Share via AirDrop – Setup</title>
+  <link rel="stylesheet" href="setup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <img src="icons/icon128.png" alt="" width="64" height="64">
+      <div>
+        <h1>Share via AirDrop</h1>
+        <p class="subtitle">Send the page you're viewing to a nearby iPhone, iPad or Mac.</p>
+      </div>
+    </header>
+
+    <section id="status" class="card" aria-live="polite">
+      <div class="status-row">
+        <span id="status-dot" class="dot"></span>
+        <span id="status-text">Checking the AirDrop helper…</span>
+      </div>
+      <p id="status-detail" class="detail" hidden></p>
+      <button id="test" type="button">Check again</button>
+    </section>
+
+    <section class="card">
+      <h2>One-time setup</h2>
+      <p>
+        Chrome extensions can't open AirDrop on their own, so this extension uses a tiny macOS helper
+        app. It only runs when you click Share, and all it does is open the AirDrop window.
+      </p>
+      <ol>
+        <li>Get the project. Either clone it:
+          <pre><code>git clone https://github.com/TingGeorge/airdrop-in-chrome.git
+cd airdrop-in-chrome</code></pre>
+          or download the latest release from
+          <a href="https://github.com/TingGeorge/airdrop-in-chrome/releases/latest" target="_blank" rel="noopener">GitHub Releases</a>
+          and unzip it. The release includes a prebuilt helper, so you don't need Xcode.
+        </li>
+        <li>In Terminal, from that folder, install and register the helper. A git checkout needs Apple's Command Line Tools to compile it; the script tells you if they're missing.
+          <pre><code>./install.sh</code></pre>
+        </li>
+        <li>Click <strong>Check again</strong> above. When the status turns green, you're done.</li>
+      </ol>
+      <p class="detail">
+        Extension ID: <code id="extension-id"></code>
+        <span id="id-hint"><br>If this ID isn't <code>bknlnfilkdendhgjbkjinfammcfcpgpn</code> (for example, you installed from the Chrome Web Store),
+        run <code>./install.sh --extension-id <span class="id-placeholder"></span></code> instead.</span>
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>How to share</h2>
+      <ul>
+        <li>Click the <img src="icons/icon16.png" alt="" class="inline-icon"> toolbar button (pin it from the puzzle-piece menu), or</li>
+        <li><span id="shortcut-set">press <kbd id="shortcut">⌥⇧A</kbd>; you can change this at <code>chrome://extensions/shortcuts</code>,</span><span id="shortcut-unset" hidden>assign a keyboard shortcut at <code>chrome://extensions/shortcuts</code>,</span> or</li>
+        <li>right-click a page or link and choose <em>Share Page/Link via AirDrop</em>.</li>
+      </ul>
+      <p>The AirDrop window opens. Pick a person or device, and the link opens on the other device.</p>
+    </section>
+  </main>
+  <script type="module" src="setup.js"></script>
+</body>
+</html>

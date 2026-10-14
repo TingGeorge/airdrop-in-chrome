@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-host:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check versions match
+        run: scripts/version.sh
+
+      - name: Build universal helper
+        run: scripts/build-host.sh
+
+      - name: Native messaging smoke test
+        run: python3 tests/test_host.py build/airdrop-host
+
+      - name: Install / uninstall (build from source)
+        run: |
+          manifest="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tinggeorge.airdrop_for_chrome.json"
+          ./install.sh --build-from-source
+          python3 -m json.tool "$manifest"
+          python3 tests/test_host.py "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["path"])' "$manifest")"
+          ./uninstall.sh
+          test ! -e "$manifest"
+
+      - name: Package release bundle
+        run: scripts/package.sh
+
+      - name: Install from release bundle (prebuilt helper)
+        run: |
+          workdir="$(mktemp -d)"
+          unzip -q dist/airdrop-in-chrome-v*.zip -d "$workdir"
+          # Simulate a browser download so the quarantine handling is exercised.
+          xattr -w com.apple.quarantine "0081;00000000;Safari;" "$workdir/airdrop-in-chrome/bin/airdrop-host"
+          "$workdir/airdrop-in-chrome/install.sh" --extension-id abcdefghijklmnopabcdefghijklmnop
+          host="$HOME/Library/Application Support/AirDropForChrome/airdrop-host"
+          if xattr -p com.apple.quarantine "$host" >/dev/null 2>&1; then
+            echo "error: installed helper is still quarantined" >&2
+            exit 1
+          fi
+          grep -q 'chrome-extension://abcdefghijklmnopabcdefghijklmnop/' \
+            "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.tinggeorge.airdrop_for_chrome.json"
+          python3 tests/test_host.py "$host"
+          "$workdir/airdrop-in-chrome/uninstall.sh"
+
+      - name: Check release packages
+        run: |
+          unzip -p dist/share-via-airdrop-extension-v*.zip manifest.json | python3 -c 'import json,sys; m=json.load(sys.stdin); assert "key" not in m; print("ok", m["version"])'
+          listing="$(unzip -l dist/airdrop-in-chrome-v*.zip)"
+          grep -q 'airdrop-in-chrome/bin/airdrop-host' <<< "$listing"
+          grep -q 'airdrop-in-chrome/docs/images/banner.png' <<< "$listing"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle
+          path: dist/*.zip
+          if-no-files-found: error
+
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax and manifest
+        run: |
+          for f in extension/*.js; do node --check "$f"; done
+          node -e '
+            const fs = require("fs");
+            const m = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
+            const files = [m.background.service_worker, m.options_page, ...Object.values(m.icons), ...Object.values(m.action.default_icon)];
+            for (const f of files) if (!fs.existsSync("extension/" + f)) throw new Error("missing " + f);
+            console.log("manifest ok:", m.name, m.version);
+          '
+      - name: ShellCheck
+        run: shellcheck install.sh uninstall.sh scripts/*.sh
