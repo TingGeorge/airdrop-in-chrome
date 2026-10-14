@@ -18,7 +18,8 @@ jobs:
 
   release:
     needs: ci
-    runs-on: macos-latest
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
@@ -38,12 +39,13 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build and package
+      # Publish exactly the bundle CI built and tested.
+      - name: Download tested bundle
         if: steps.version.outputs.exists == 'false'
-        run: |
-          scripts/build-host.sh
-          python3 tests/test_host.py build/airdrop-host
-          scripts/package.sh
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: dist
 
       - name: Publish release
         if: steps.version.outputs.exists == 'false'

@@ -13,23 +13,63 @@ export function isShareable(url) {
   }
 }
 
-// Chrome reports a missing/misconfigured host with these messages.
-export function isHostMissingError(message = "") {
-  return /native messaging host not found|access to the specified native messaging host is forbidden/i.test(message);
+function errorResult(error) {
+  return {
+    ok: false,
+    error,
+    // "Specified native messaging host not found."
+    hostMissing: /native messaging host not found/i.test(error),
+    // "Access to the specified native messaging host is forbidden." (extension ID not in allowed_origins)
+    forbidden: /native messaging host is forbidden/i.test(error),
+  };
 }
 
-export async function sendToHost(message) {
-  try {
-    const response = await chrome.runtime.sendNativeMessage(HOST_NAME, message);
-    return response ?? { ok: false, error: "The AirDrop helper returned no response." };
-  } catch (err) {
-    const error = err?.message ?? String(err);
-    return { ok: false, error, hostMissing: isHostMissingError(error) };
-  }
+// Sends one message and resolves with the host's single reply.
+//
+// Uses a port (connectNative) rather than sendNativeMessage because an open
+// native messaging port keeps the MV3 service worker alive while the user is
+// still picking a device in the AirDrop window.
+export function sendToHost(message, { timeoutMs } = {}) {
+  return new Promise((resolve) => {
+    let port;
+    let timer;
+    let settled = false;
+
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try {
+        port?.disconnect();
+      } catch {
+        // Already disconnected.
+      }
+      resolve(result);
+    };
+
+    try {
+      port = chrome.runtime.connectNative(HOST_NAME);
+    } catch (err) {
+      finish(errorResult(err?.message ?? String(err)));
+      return;
+    }
+
+    port.onMessage.addListener((reply) => {
+      finish(reply && typeof reply === "object" ? reply : errorResult("The AirDrop helper sent an invalid reply."));
+    });
+    port.onDisconnect.addListener(() => {
+      finish(errorResult(chrome.runtime.lastError?.message ?? "The AirDrop helper exited without replying."));
+    });
+    if (timeoutMs) {
+      timer = setTimeout(() => finish(errorResult("The AirDrop helper didn't respond in time.")), timeoutMs);
+    }
+
+    port.postMessage(message);
+  });
 }
 
 export function ping() {
-  return sendToHost({ action: "ping" });
+  return sendToHost({ action: "ping" }, { timeoutMs: 5000 });
 }
 
 export function shareUrl(url, title) {

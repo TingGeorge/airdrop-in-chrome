@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds the AirDrop native messaging host and registers it with Chrome
+# Installs the AirDrop native messaging host and registers it with Chrome
 # (and other Chromium-based browsers that are installed).
 #
 # Uses the prebuilt helper in bin/ (included in release downloads) when it's
@@ -20,17 +20,24 @@ HOST_BINARY="$INSTALL_DIR/airdrop-host"
 PREBUILT_BINARY="$REPO_DIR/bin/airdrop-host"
 APP_SUPPORT="$HOME/Library/Application Support"
 
-# Where each browser looks for per-user native messaging host manifests.
-BROWSER_DIRS=(
-  "Google/Chrome"
-  "Google/Chrome Beta"
-  "Google/Chrome Dev"
-  "Google/Chrome Canary"
-  "Chromium"
-  "BraveSoftware/Brave-Browser"
-  "Microsoft Edge"
-  "Vivaldi"
-  "Arc/User Data"
+# Where each browser looks for per-user native messaging host manifests
+# ("<dir under ~/Library/Application Support>|<app name>"). Keep in sync with
+# uninstall.sh.
+BROWSERS=(
+  "Google/Chrome|Google Chrome"
+  "Google/Chrome Beta|Google Chrome Beta"
+  "Google/Chrome Dev|Google Chrome Dev"
+  "Google/Chrome Canary|Google Chrome Canary"
+  "Chromium|Chromium"
+  "BraveSoftware/Brave-Browser|Brave Browser"
+  "BraveSoftware/Brave-Browser-Beta|Brave Browser Beta"
+  "BraveSoftware/Brave-Browser-Nightly|Brave Browser Nightly"
+  "Microsoft Edge|Microsoft Edge"
+  "Microsoft Edge Beta|Microsoft Edge Beta"
+  "Microsoft Edge Dev|Microsoft Edge Dev"
+  "Microsoft Edge Canary|Microsoft Edge Canary"
+  "Vivaldi|Vivaldi"
+  "Arc/User Data|Arc"
 )
 
 extension_ids=()
@@ -73,12 +80,14 @@ fi
 mkdir -p "$INSTALL_DIR"
 if [[ $build_from_source -eq 0 && -f "$PREBUILT_BINARY" ]]; then
   echo "==> Installing the prebuilt AirDrop helper…"
-  cp -f "$PREBUILT_BINARY" "$HOST_BINARY"
+  # Copy to a new file and rename it into place: overwriting a signed binary in
+  # place can get it killed on Apple silicon (the kernel caches signatures per file).
+  cp -f "$PREBUILT_BINARY" "$HOST_BINARY.new"
   # A browser download marks the file as quarantined, and Gatekeeper would then
-  # refuse to let Chrome launch it. You chose to install it, so clear the flag
-  # and re-apply the ad-hoc signature that Apple silicon requires.
-  xattr -c "$HOST_BINARY" 2>/dev/null || true
-  codesign --force --sign - "$HOST_BINARY" >/dev/null 2>&1 || true
+  # refuse to let Chrome launch it. You chose to install it, so clear the flag.
+  # (The binary is already ad-hoc signed by scripts/build-host.sh.)
+  xattr -d com.apple.quarantine "$HOST_BINARY.new" 2>/dev/null || true
+  mv -f "$HOST_BINARY.new" "$HOST_BINARY"
 else
   if ! xcrun --find swiftc >/dev/null 2>&1; then
     echo "error: the Swift compiler wasn't found." >&2
@@ -120,16 +129,19 @@ manifest="{
 
 echo "==> Registering with browsers…"
 registered=0
-for browser in "${BROWSER_DIRS[@]}"; do
+for entry in "${BROWSERS[@]}"; do
+  browser="${entry%%|*}"
+  app="${entry#*|}"
   browser_dir="$APP_SUPPORT/$browser"
-  # Always register with Google Chrome; others only if they're installed.
-  if [[ "$browser" != "Google/Chrome" && ! -d "$browser_dir" ]]; then
+  # Always register with Google Chrome; others only if they're installed or have been used.
+  if [[ "$browser" != "Google/Chrome" && ! -d "$browser_dir" \
+        && ! -d "/Applications/$app.app" && ! -d "$HOME/Applications/$app.app" ]]; then
     continue
   fi
   hosts_dir="$browser_dir/NativeMessagingHosts"
   mkdir -p "$hosts_dir"
   printf '%s\n' "$manifest" > "$hosts_dir/$HOST_NAME.json"
-  echo "    $browser"
+  echo "    $app"
   registered=$((registered + 1))
 done
 

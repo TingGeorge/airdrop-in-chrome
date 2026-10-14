@@ -6,6 +6,10 @@ const MENU_SHARE_MEDIA = "airdrop-share-media";
 
 const DEFAULT_TITLE = "Share this page via AirDrop";
 
+// The badge outlives the service worker. If the worker was stopped mid-flash,
+// don't leave a stale "…" or "✓" behind.
+chrome.action.setBadgeText({ text: "" });
+
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({
@@ -25,7 +29,7 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   });
 
   if (reason === chrome.runtime.OnInstalledReason.INSTALL) {
-    chrome.tabs.create({ url: chrome.runtime.getURL("setup.html") });
+    chrome.runtime.openOptionsPage();
   }
 });
 
@@ -36,19 +40,21 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   switch (info.menuItemId) {
     case MENU_SHARE_LINK:
-      share(info.linkUrl, info.selectionText || info.linkUrl);
+      share(info.linkUrl, info.linkUrl);
       break;
     case MENU_SHARE_MEDIA:
       share(info.srcUrl, info.srcUrl);
       break;
     default:
-      share(info.frameUrl || info.pageUrl || tab?.url, tab?.title);
+      share(info.pageUrl || tab?.url, tab?.title);
   }
 });
 
 let busy = false;
+let flashTimer;
 
 async function share(url, title) {
+  // The AirDrop window from the previous click is still open.
   if (busy) return;
 
   if (!url || !isShareable(url)) {
@@ -64,9 +70,9 @@ async function share(url, title) {
       await flash("✓", "#188038", "Sent via AirDrop");
     } else if (result.cancelled) {
       await setBadge("", null, DEFAULT_TITLE);
-    } else if (result.hostMissing) {
-      await setBadge("!", "#d93025", "AirDrop helper not installed. Click the extension's options to set it up.");
-      openSetupPage(result.error);
+    } else if (result.hostMissing || result.forbidden) {
+      await flash("!", "#d93025", "The AirDrop helper needs to be set up. Opening setup…", 6000);
+      chrome.runtime.openOptionsPage();
     } else {
       await flash("!", "#d93025", `AirDrop failed: ${result.error}`, 6000);
     }
@@ -75,13 +81,8 @@ async function share(url, title) {
   }
 }
 
-function openSetupPage(error) {
-  const url = new URL(chrome.runtime.getURL("setup.html"));
-  if (error) url.searchParams.set("error", error);
-  chrome.tabs.create({ url: url.toString() });
-}
-
 async function setBadge(text, color, title) {
+  clearTimeout(flashTimer);
   await chrome.action.setBadgeText({ text });
   if (color) await chrome.action.setBadgeBackgroundColor({ color });
   await chrome.action.setTitle({ title });
@@ -89,5 +90,5 @@ async function setBadge(text, color, title) {
 
 async function flash(text, color, title, ms = 2500) {
   await setBadge(text, color, title);
-  setTimeout(() => setBadge("", null, DEFAULT_TITLE), ms);
+  flashTimer = setTimeout(() => setBadge("", null, DEFAULT_TITLE), ms);
 }

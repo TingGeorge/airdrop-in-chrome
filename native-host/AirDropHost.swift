@@ -19,6 +19,9 @@ let hostVersion = "1.0.0"
 // forgotten window doesn't leave this process running forever.
 let shareTimeout: TimeInterval = 10 * 60
 
+// Requests are tiny; refuse anything absurd instead of trying to allocate it.
+let maxMessageLength = 1024 * 1024
+
 // MARK: - Native messaging I/O
 
 func readMessage() -> [String: Any]? {
@@ -27,6 +30,7 @@ func readMessage() -> [String: Any]? {
     guard header.count == 4 else { return nil }
     // Chrome uses native byte order; every Mac (Intel and Apple silicon) is little-endian.
     let length = Int(UInt32(header[0]) | UInt32(header[1]) << 8 | UInt32(header[2]) << 16 | UInt32(header[3]) << 24)
+    guard length <= maxMessageLength else { return nil }
     let body = stdin.readData(ofLength: length)
     guard body.count == length else { return nil }
     return (try? JSONSerialization.jsonObject(with: body)) as? [String: Any]
@@ -42,7 +46,9 @@ func writeMessage(_ message: [String: Any]) {
         UInt8((length >> 24) & 0xFF),
     ])
     data.append(body)
-    FileHandle.standardOutput.write(data)
+    // write(contentsOf:) throws instead of raising an uncatchable exception if Chrome
+    // has already closed the pipe.
+    try? FileHandle.standardOutput.write(contentsOf: data)
 }
 
 func reply(_ message: [String: Any], exitCode: Int32 = 0) -> Never {
@@ -58,6 +64,9 @@ func fail(_ error: String) -> Never {
 
 final class AirDropController: NSObject, NSApplicationDelegate, NSSharingServiceDelegate {
     private let items: [Any]
+    // perform(withItems:) is asynchronous and the delegate is weak, so keep the
+    // service alive until it reports back.
+    private var service: NSSharingService?
 
     init(items: [Any]) {
         self.items = items
@@ -71,10 +80,20 @@ final class AirDropController: NSObject, NSApplicationDelegate, NSSharingService
             fail("AirDrop can't share this right now. Make sure Wi-Fi and Bluetooth are on and AirDrop is enabled in Control Center.")
         }
         service.delegate = self
+        self.service = service
 
         // We were launched in the background by Chrome. Come to the front so the
         // AirDrop window appears above the browser.
+        // NSApplication.activate() needs the macOS 14 SDK (Swift 5.9 / Xcode 15).
+        #if compiler(>=5.9)
+        if #available(macOS 14.0, *) {
+            NSApp.activate()
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        #else
         NSApp.activate(ignoringOtherApps: true)
+        #endif
         service.perform(withItems: items)
 
         Timer.scheduledTimer(withTimeInterval: shareTimeout, repeats: false) { _ in
@@ -123,8 +142,11 @@ case "share":
     // No Dock icon or menu bar; we only exist to show the AirDrop window.
     app.setActivationPolicy(.accessory)
     let controller = AirDropController(items: [url])
-    app.delegate = controller
-    app.run()
+    // NSApplication.delegate is weak; keep the controller alive while the app runs.
+    withExtendedLifetime(controller) {
+        app.delegate = controller
+        app.run()
+    }
 
 default:
     fail("Unknown action.")

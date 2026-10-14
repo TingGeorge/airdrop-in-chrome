@@ -1,0 +1,94 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; }
+  body { width: 1280px; height: 780px; font-family: Inter, -apple-system, sans-serif; overflow: hidden; position: relative;
+    background: linear-gradient(160deg, #e8eefc 0%, #f6f1ff 100%); color: #1d1d1f; }
+  .window { position: absolute; left: 60px; top: 50px; width: 900px; height: 640px; background: #fff; border-radius: 14px;
+    box-shadow: 0 30px 80px rgba(20,40,90,.25), 0 0 0 1px rgba(0,0,0,.08); overflow: hidden; }
+  .tabs { height: 42px; background: #dfe3eb; display: flex; align-items: flex-end; padding-left: 86px; position: relative; }
+  .lights { position: absolute; left: 16px; top: 15px; display: flex; gap: 8px; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .tab { background: #fff; height: 34px; width: 230px; border-radius: 10px 10px 0 0; display: flex; align-items: center; gap: 8px;
+    padding: 0 14px; font-size: 13px; box-sizing: border-box; }
+  .fav { width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg,#ff9f0a,#ff375f); }
+  .toolbar { height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-bottom: 1px solid #e5e5ea; }
+  .nav { color: #8e8e93; font-size: 18px; letter-spacing: 10px; }
+  .omni { flex: 1; height: 30px; border-radius: 15px; background: #f1f3f4; display: flex; align-items: center; padding: 0 14px; font-size: 14px; color: #3c4043; }
+  .omni b { color: #1d1d1f; font-weight: 500; }
+  .ext { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #e8f0fe; position: relative;
+    box-shadow: 0 0 0 3px #0a84ff55; }
+  .ext img { width: 20px; height: 20px; }
+  .menu { width: 20px; text-align: center; color: #5f6368; font-weight: 700; }
+  .page { padding: 34px 60px; }
+  .page .kicker { color: #ff375f; font-weight: 700; font-size: 13px; letter-spacing: 1px; }
+  .page h2 { font-size: 34px; margin: 8px 0 18px; letter-spacing: -.5px; max-width: 620px; }
+  .line { height: 12px; background: #eceef2; border-radius: 6px; margin: 12px 0; }
+  .hero { height: 150px; border-radius: 12px; margin: 22px 0; background: linear-gradient(120deg,#ffd6a5,#ffadad 50%,#bdb2ff); }
+  .scrim { position: absolute; inset: 88px 0 0 0; background: rgba(0,0,0,.18); }
+  .airdrop { position: absolute; left: 270px; top: 210px; width: 520px; background: rgba(246,246,248,.97); border-radius: 16px;
+    box-shadow: 0 30px 70px rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.1); padding: 22px 26px 20px; backdrop-filter: blur(20px); }
+  .airdrop h3 { margin: 0; font-size: 17px; text-align: center; }
+  .airdrop .sub { text-align: center; font-size: 13px; color: #6e6e73; margin: 4px 0 20px; }
+  .people { display: flex; justify-content: space-around; }
+  .person { text-align: center; font-size: 13px; width: 120px; }
+  .avatar { width: 74px; height: 74px; border-radius: 50%; margin: 0 auto 10px; display: grid; place-items: center; color: #fff; font-size: 28px; font-weight: 700; position: relative; }
+  .person.sel .avatar { box-shadow: 0 0 0 4px #fff, 0 0 0 7px #0a84ff; }
+  .person small { display: block; color: #8e8e93; font-size: 12px; margin-top: 2px; }
+  .ring { position: absolute; inset: -9px; border-radius: 50%; border: 3px solid #0a84ff; border-right-color: transparent; border-bottom-color: transparent; transform: rotate(30deg); }
+  .footer { display: flex; justify-content: flex-end; margin-top: 18px; }
+  .btn { padding: 6px 18px; border-radius: 7px; background: #fff; border: 1px solid #d1d1d6; font-size: 13px; }
+  .phone { position: absolute; left: 1000px; top: 120px; width: 220px; height: 450px; border-radius: 38px; background: #111;
+    box-shadow: 0 30px 70px rgba(20,40,90,.3); padding: 10px; box-sizing: border-box; }
+  .screen { width: 100%; height: 100%; border-radius: 30px; background: linear-gradient(180deg,#1c2b4a,#3a2f6b); position: relative; overflow: hidden; }
+  .notch { position: absolute; left: 50%; top: 10px; width: 70px; height: 20px; border-radius: 12px; background: #000; transform: translateX(-50%); }
+  .toast { position: absolute; left: 10px; right: 10px; top: 44px; background: rgba(255,255,255,.92); border-radius: 18px; padding: 12px; font-size: 12px; }
+  .toast b { display: block; font-size: 13px; margin-bottom: 2px; }
+  .toast .row { display: flex; gap: 8px; align-items: center; }
+  .toast img { width: 28px; height: 28px; }
+  .safari { position: absolute; left: 10px; right: 10px; bottom: 16px; top: 150px; background: #fff; border-radius: 16px; padding: 12px; }
+  .safari .bar { height: 22px; border-radius: 8px; background: #f1f1f4; font-size: 10px; display: grid; place-items: center; color: #3c4043; margin-bottom: 10px; }
+  .safari .mini { height: 60px; border-radius: 8px; background: linear-gradient(120deg,#ffd6a5,#ffadad 50%,#bdb2ff); margin-bottom: 8px; }
+  .safari .l { height: 7px; background: #eceef2; border-radius: 4px; margin: 6px 0; }
+  .step { position: absolute; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: #0a3d91;
+    background: #fff; border-radius: 999px; padding: 7px 14px 7px 7px; box-shadow: 0 8px 24px rgba(10,61,145,.18); }
+  .step span { width: 26px; height: 26px; border-radius: 50%; background: #0a84ff; color: #fff; display: grid; place-items: center; font-size: 14px; }
+  .arrow { position: absolute; }
+</style></head><body>
+  <div class="window">
+    <div class="tabs">
+      <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+      <div class="tab"><div class="fav"></div>The Weekend Recipe</div>
+    </div>
+    <div class="toolbar">
+      <div class="nav">‹ › ↻</div>
+      <div class="omni"><b>example.com</b>/recipes/weekend-pasta</div>
+      <div class="ext"><img src="../../extension/icons/icon32.png" alt=""></div>
+      <div class="menu">⋮</div>
+    </div>
+    <div class="page">
+      <div class="kicker">RECIPES</div>
+      <h2>The 20-minute pasta you'll make every weekend</h2>
+      <div class="line" style="width:90%"></div><div class="line" style="width:75%"></div>
+      <div class="hero"></div>
+      <div class="line" style="width:85%"></div><div class="line" style="width:60%"></div>
+    </div>
+    <div class="scrim"></div>
+    <div class="airdrop">
+      <h3>AirDrop</h3>
+      <div class="sub">example.com/recipes/weekend-pasta</div>
+      <div class="people">
+        <div class="person sel"><div class="avatar" style="background:linear-gradient(135deg,#ff9f0a,#ff375f)">A<div class="ring"></div></div>Alex<small>iPhone</small></div>
+        <div class="person"><div class="avatar" style="background:linear-gradient(135deg,#30d158,#0a84ff)">S</div>Sam<small>iPad</small></div>
+        <div class="person"><div class="avatar" style="background:linear-gradient(135deg,#bf5af2,#5e5ce6)">M</div>My MacBook<small>Mac</small></div>
+      </div>
+      <div class="footer"><div class="btn">Cancel</div></div>
+    </div>
+  </div>
+  <div class="phone"><div class="screen"><div class="notch"></div>
+    <div class="toast"><div class="row"><img src="../../extension/icons/icon32.png" alt=""><div><b>AirDrop</b>Link received, opened in Safari</div></div></div>
+    <div class="safari"><div class="bar">example.com</div><div class="mini"></div><div class="l" style="width:90%"></div><div class="l" style="width:70%"></div><div class="l" style="width:80%"></div><div class="l" style="width:55%"></div></div>
+  </div></div>
+  <div class="step" style="left:640px;top:12px"><span>1</span>Click the toolbar button or press ⌥⇧A</div>
+  <div class="step" style="left:410px;top:712px"><span>2</span>Pick a nearby device in the AirDrop window</div>
+  <div class="step" style="left:930px;top:600px"><span>3</span>The page opens on the other device</div>
+</body></html>

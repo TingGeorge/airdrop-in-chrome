@@ -19,6 +19,7 @@ def call(binary, payload, raw=None):
         raw = struct.pack("<I", len(body)) + body
     proc = subprocess.run([binary], input=raw, capture_output=True, timeout=30)
     out = proc.stdout
+    assert proc.returncode == 0, f"exit code {proc.returncode} (stderr: {proc.stderr!r})"
     assert len(out) >= 4, f"no reply (stderr: {proc.stderr!r})"
     (length,) = struct.unpack("<I", out[:4])
     assert len(out) == 4 + length, f"reply length mismatch: header {length}, got {len(out) - 4}"
@@ -33,11 +34,14 @@ def main():
         ({}, None, lambda r: r["ok"] is False),
         ({"action": "share", "url": "javascript:alert(1)"}, None, lambda r: r["ok"] is False),
         ({"action": "share"}, None, lambda r: r["ok"] is False),
+        ({"action": "share", "url": 5}, None, lambda r: r["ok"] is False),
+        ({"action": "share", "url": "chrome://settings"}, None, lambda r: r["ok"] is False),
         ({"action": "share", "url": "file:///definitely/not/here.pdf"}, None,
          lambda r: r["ok"] is False and "doesn't exist" in r["error"]),
         (None, b"", lambda r: r["ok"] is False),
         (None, struct.pack("<I", 10) + b"{}", lambda r: r["ok"] is False),
         (None, struct.pack("<I", 3) + b"[1]", lambda r: r["ok"] is False),
+        (None, struct.pack("<I", 0xFFFFFFF0) + b"{}", lambda r: r["ok"] is False),
     ]
     for payload, raw, check in cases:
         reply = call(binary, payload, raw)
