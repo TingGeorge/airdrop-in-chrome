@@ -8,6 +8,7 @@
   <img alt="macOS 11+" src="https://img.shields.io/badge/macOS-11%2B-111111?logo=apple">
   <img alt="Manifest V3" src="https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white">
   <img alt="Swift" src="https://img.shields.io/badge/helper-Swift-F05138?logo=swift&logoColor=white">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
 <p align="center">
@@ -238,6 +239,10 @@ node docs/src/render.mjs                     # re-render banner.jpg and demo.jpg
 1. Bump `version` in `extension/manifest.json`.
 2. Set `hostVersion` in `native-host/AirDropHost.swift` to the same version (CI fails if they differ).
 3. Merge to `main`.
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 TingGeorge. You're free to use, modify and redistribute it, including commercially, as long as the copyright notice and license text are kept.
 
 ---
 
